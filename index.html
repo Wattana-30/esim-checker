@@ -231,7 +231,6 @@ const esimData = [
     { brand: "Realme", model: "Realme GT 7 Pro, 14 Pro+", series: "Realme รุ่นใหม่ (2025)", note: "รุ่นใหม่ที่รองรับ", supported: true },
     
     // --- REALME (NOT Supported) ---
-    // ปรับชื่อให้แสดงแต่รุ่น ไม่โชว์รหัส
     { brand: "Realme", model: "Realme 8, 8 Pro", series: "Realme 8 Series", note: "ไม่รองรับ eSIM", supported: false },
     { brand: "Realme", model: "Realme 9, 10, 11 (Pro/Plus)", series: "Realme Number Series (เก่า)", note: "ไม่รองรับ eSIM", supported: false },
     { brand: "Realme", model: "Realme C67, C55, C35, C Series", series: "Realme C Series", note: "ไม่รองรับ eSIM", supported: false },
@@ -308,6 +307,35 @@ const esimData = [
     { brand: "Other", model: "Nokia G60 5G, X30 5G", series: "Nokia 5G", note: "", supported: true }
 ];
 
+// ==========================================
+// 3. MODEL MAPPING (Translates Codes -> Names)
+// ==========================================
+const modelMapping = {
+    // Samsung (Partial list of common models)
+    "SM-S928B": "Samsung S24 Ultra", "SM-S926B": "Samsung S24+", "SM-S921B": "Samsung S24",
+    "SM-S918B": "Samsung S23 Ultra", "SM-S916B": "Samsung S23+", "SM-S911B": "Samsung S23",
+    "SM-S908B": "Samsung S22 Ultra", "SM-S906B": "Samsung S22+", "SM-S901B": "Samsung S22",
+    "SM-A556E": "Samsung A55 5G", "SM-A546E": "Samsung A54 5G", "SM-A356E": "Samsung A35 5G",
+    
+    // Realme
+    "RMX3085": "Realme 8", "RMX3081": "Realme 8 Pro",
+    "RMX3840": "Realme 12 Pro+ 5G", "RMX3842": "Realme 12 Pro 5G",
+    "RMX3392": "Realme 9 Pro+", "RMX3393": "Realme 9 Pro",
+    
+    // OPPO
+    "CPH2557": "OPPO Find N3 Flip", "CPH2437": "OPPO Find N2 Flip",
+    "CPH2599": "OPPO Reno11", "CPH2603": "OPPO Reno11 Pro",
+    "CPH2529": "OPPO A98 5G", "CPH2483": "OPPO A78 5G",
+    
+    // Vivo
+    "V2308": "Vivo V29 5G", "V2250": "Vivo V27 5G",
+    "V2202": "Vivo V25 5G", "V2310": "Vivo V29e",
+    
+    // Xiaomi (Sometimes uses numbers/names mixed)
+    "2312DRA50G": "Redmi Note 13 Pro+ 5G", 
+    "23113RKC6G": "Xiaomi 14"
+};
+
 let currentBrandFilter = 'All';
 
 window.onload = async () => {
@@ -322,10 +350,15 @@ window.onload = async () => {
             const badge = document.getElementById('detectedBadge');
             
             if (deepScan.model) {
-                 badge.innerHTML = `<i class="fas fa-mobile-alt"></i> ตรวจพบ: ${deepScan.model}`;
+                 // Display mapped name if available, otherwise detected model
+                 const displayName = deepScan.mappedName || deepScan.model;
                  
-                 // ค้นหาด้วยชื่อรุ่นภาษาคน แทนการใช้รหัส
-                 let searchKey = deepScan.model;
+                 badge.innerHTML = `<i class="fas fa-mobile-alt"></i> ตรวจพบ: ${displayName}`;
+                 
+                 // Use displayName for search if available, otherwise raw model
+                 // Clean up search key (remove extra codes if present)
+                 let searchKey = displayName;
+                 
                  document.getElementById('searchInput').value = searchKey;
                  filterDevices();
             } else {
@@ -334,7 +367,7 @@ window.onload = async () => {
             
             badge.classList.remove('hidden');
             document.getElementById('instructionText').innerHTML = 
-                `ระบบตรวจพบ <b>${deepScan.model || deepScan.brand}</b><br>กรุณาจิ้มที่รุ่นมือถือของคุณด้านล่างเพื่อยืนยัน`;
+                `ระบบตรวจพบ <b>${deepScan.mappedName || deepScan.model || deepScan.brand}</b><br>กรุณาจิ้มที่รุ่นมือถือของคุณด้านล่างเพื่อยืนยัน`;
         } else {
             filterDevices();
         }
@@ -346,46 +379,63 @@ window.onload = async () => {
 
 async function getDetailedDevice() {
     await new Promise(r => setTimeout(r, 1500));
-    let detected = { brand: null, model: null };
+    let detected = { brand: null, model: null, mappedName: null };
 
+    // Check Client Hints (Modern Android)
     if (navigator.userAgentData) {
         try {
             const uaData = await navigator.userAgentData.getHighEntropyValues(["model", "platform"]);
             if (uaData.platform === "Android") detected.brand = "Android (General)";
             
             if (uaData.model) {
-                const model = uaData.model;
-                detected.model = model;
+                const modelCode = uaData.model;
+                detected.model = modelCode;
                 
-                if (model.includes("Pixel")) detected.brand = "Google";
-                else if (model.startsWith("SM-") || model.includes("Samsung")) detected.brand = "Samsung";
-                else if (model.startsWith("2") && model.endsWith("TG")) detected.brand = "Xiaomi"; 
-                else if (model.includes("V2")) detected.brand = "Vivo";
-                else if (model.includes("CPH")) detected.brand = "OPPO";
-                else if (model.includes("RMX") || model.toLowerCase().includes("realme")) {
-                    detected.brand = "Realme";
-                    // แปลงรหัสโมเดลเป็นชื่อรุ่นภาษาคนทันที
-                    if(model.includes("RMX3085")) detected.model = "Realme 8";
+                // 1. Try Mapping First
+                if (modelMapping[modelCode]) {
+                    detected.mappedName = modelMapping[modelCode];
+                    // Guess brand from mapped name
+                    if (detected.mappedName.includes("Samsung")) detected.brand = "Samsung";
+                    else if (detected.mappedName.includes("Realme")) detected.brand = "Realme";
+                    else if (detected.mappedName.includes("OPPO")) detected.brand = "OPPO";
+                    else if (detected.mappedName.includes("Vivo")) detected.brand = "Vivo";
+                    else if (detected.mappedName.includes("Xiaomi") || detected.mappedName.includes("Redmi")) detected.brand = "Xiaomi";
+                } 
+                // 2. Fallback to patterns
+                else {
+                    if (modelCode.includes("Pixel")) detected.brand = "Google";
+                    else if (modelCode.startsWith("SM-") || modelCode.includes("Samsung")) detected.brand = "Samsung";
+                    else if (modelCode.startsWith("2") && modelCode.endsWith("TG")) detected.brand = "Xiaomi"; 
+                    else if (modelCode.includes("V2")) detected.brand = "Vivo";
+                    else if (modelCode.includes("CPH")) detected.brand = "OPPO";
+                    else if (modelCode.includes("RMX") || modelCode.toLowerCase().includes("realme")) detected.brand = "Realme";
                 }
             }
         } catch(e) { console.log("Client Hints failed", e); }
     }
 
+    // Fallback to User Agent (Old Android / iOS)
     if (!detected.brand) {
         const ua = navigator.userAgent || navigator.vendor || window.opera;
         if (/iPhone|iPad|iPod/.test(ua)) detected.brand = "Apple";
-        else if (/Samsung|SM-|GT-/.test(ua)) detected.brand = "Samsung";
+        else if (/Samsung|SM-|GT-/.test(ua)) {
+             detected.brand = "Samsung";
+             // Basic regex for regex-able models
+             const match = ua.match(/SM-[A-Z0-9]+/);
+             if(match) detected.model = match[0];
+        }
         else if (/Pixel/.test(ua)) detected.brand = "Google";
         else if (/Oppo|CPH|PG/.test(ua)) detected.brand = "OPPO";
-        else if (/Xiaomi|Redmi|POCO/.test(ua)) {
-            detected.brand = "Xiaomi"; 
-        }
+        else if (/Xiaomi|Redmi|POCO/.test(ua)) detected.brand = "Xiaomi";
         else if (/Vivo|V2/.test(ua)) detected.brand = "Vivo";
         else if (/Huawei|HMA|ELS|ANA/.test(ua)) detected.brand = "Huawei";
         else if (/Realme|RMX/.test(ua)) {
             detected.brand = "Realme";
-             // แปลงรหัสโมเดลเป็นชื่อรุ่นภาษาคน (Fallback)
-             if(ua.includes("RMX3085")) detected.model = "Realme 8";
+            const match = ua.match(/RMX[0-9]+/);
+            if(match) {
+                detected.model = match[0];
+                if (modelMapping[match[0]]) detected.mappedName = modelMapping[match[0]];
+            }
         }
         else if (/OnePlus/.test(ua)) detected.brand = "OnePlus";
         else if (/Sony/.test(ua)) detected.brand = "Sony";
@@ -421,7 +471,6 @@ function filterDevices() {
     const list = document.getElementById('deviceList');
     
     const filtered = esimData.filter(item => {
-        // Group sub-brands for filter logic
         let itemBrandForFilter = item.brand;
         if (currentBrandFilter === 'Xiaomi' && (item.brand === 'Xiaomi' || item.brand === 'Redmi' || item.brand === 'POCO')) {
              // Allow Redmi/Poco to show when Xiaomi is selected
