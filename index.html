@@ -101,34 +101,35 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">1</div>
-                        <div>
-                            <p class="font-medium text-gray-800">ไปที่เมนูโทรศัพท์</p>
-                            <p class="text-sm text-gray-500">เหมือนตอนจะกดเบอร์โทรหาคนอื่น</p>
+                    <!-- Universal Method -->
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <p class="font-bold text-blue-800 mb-2"><i class="fas fa-globe mr-1"></i> วิธีมาตรฐาน (ทุกรุ่น)</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 shadow-sm shrink-0">
+                                <i class="fas fa-phone-alt"></i>
+                            </div>
+                            <div class="text-sm text-gray-700">
+                                กดรหัส <span class="font-bold text-lg text-blue-600 mx-1">*#06#</span> แล้วโทรออก
+                            </div>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500 bg-white/60 p-2 rounded">
+                            มองหาคำว่า <b>EID</b> (32 หลัก)<br>
+                            <span class="text-green-600 font-medium">ถ้ามี EID = รองรับ eSIM ชัวร์!</span>
                         </div>
                     </div>
 
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">2</div>
-                        <div>
-                            <p class="font-medium text-gray-800">กดรหัส <span class="text-xl font-bold text-blue-600 tracking-wider">*#06#</span></p>
-                            <p class="text-sm text-gray-500">แล้วกดโทรออก (บางเครื่องจะขึ้นเองทันที)</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
-                        <p class="text-sm text-gray-600 mb-2">หน้าจอจะแสดงข้อมูลเครื่อง</p>
-                        <div class="inline-block text-left bg-white p-2 border rounded text-xs font-mono text-gray-500">
-                            IMEI1: 356...<br>
-                            IMEI2: 356...<br>
-                            <span class="bg-yellow-100 text-black font-bold px-1">EID: 890...</span>  <-- ต้องมีบรรทัดนี้
-                        </div>
-                        <p class="text-xs text-green-600 mt-2 font-medium"><i class="fas fa-check-circle"></i> ถ้ามี EID = รองรับ eSIM</p>
+                    <!-- Menu Method -->
+                    <div class="text-sm text-gray-600">
+                        <p class="font-bold mb-1 text-gray-800"><i class="fas fa-cog mr-1"></i> หรือเช็คผ่านเมนู:</p>
+                        <ul class="list-disc pl-5 space-y-1 text-xs">
+                            <li><b>iPhone:</b> การตั้งค่า > ทั่วไป > เกี่ยวกับ > มองหา EID</li>
+                            <li><b>Samsung:</b> การตั้งค่า > เกี่ยวกับโทรศัพท์ > ข้อมูลสถานะ</li>
+                            <li><b>Android อื่นๆ:</b> การตั้งค่า > เกี่ยวกับ > สถานะซิม</li>
+                        </ul>
                     </div>
                 </div>
 
-                <button onclick="toggleUSSDModal(false)" class="w-full mt-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700">
+                <button onclick="toggleUSSDModal(false)" class="w-full mt-6 py-3 bg-gray-800 text-white rounded-xl font-medium hover:bg-gray-900 shadow-lg">
                     เข้าใจแล้ว
                 </button>
             </div>
@@ -139,17 +140,19 @@
             <div class="p-4 pb-2 bg-white border-b">
                 
                 <!-- USSD Banner Trigger -->
-                <div onclick="toggleUSSDModal(true)" class="mb-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-3 rounded-xl flex items-center justify-between cursor-pointer hover:shadow-md transition-all group">
+                <div onclick="toggleUSSDModal(true)" class="mb-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-xl flex items-center justify-between cursor-pointer shadow-md hover:shadow-lg transition-all group transform hover:-translate-y-0.5">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-500 shadow-sm group-hover:scale-110 transition-transform">
-                            <i class="fas fa-hashtag"></i>
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white backdrop-blur-sm">
+                            <i class="fas fa-barcode"></i>
                         </div>
                         <div>
-                            <p class="font-bold text-blue-800 text-sm">เช็คชัวร์ด้วยรหัสในเครื่อง</p>
-                            <p class="text-xs text-blue-600">กด *#06# เพื่อดูเลข EID</p>
+                            <p class="font-bold text-sm">เช็คชัวร์ด้วยรหัสในเครื่อง</p>
+                            <p class="text-xs text-blue-100">กด *#06# เพื่อดูเลข EID (ได้ทุกรุ่น)</p>
                         </div>
                     </div>
-                    <i class="fas fa-chevron-right text-blue-300"></i>
+                    <div class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
                 </div>
 
                 <p id="instructionText" class="text-sm text-gray-600 mb-2">
@@ -228,7 +231,8 @@ const esimData = [
     { brand: "Realme", model: "Realme GT 7 Pro, 14 Pro+", series: "Realme รุ่นใหม่ (2025)", note: "รุ่นใหม่ที่รองรับ", supported: true },
     
     // --- REALME (NOT Supported) ---
-    { brand: "Realme", model: "Realme 8 (RMX3085), 8 Pro", series: "Realme 8 Series", note: "ไม่รองรับ eSIM", supported: false },
+    // ปรับชื่อให้แสดงแต่รุ่น ไม่โชว์รหัส
+    { brand: "Realme", model: "Realme 8, 8 Pro", series: "Realme 8 Series", note: "ไม่รองรับ eSIM", supported: false },
     { brand: "Realme", model: "Realme 9, 10, 11 (Pro/Plus)", series: "Realme Number Series (เก่า)", note: "ไม่รองรับ eSIM", supported: false },
     { brand: "Realme", model: "Realme C67, C55, C35, C Series", series: "Realme C Series", note: "ไม่รองรับ eSIM", supported: false },
     { brand: "Realme", model: "GT Master, GT Neo 3/5, GT 2", series: "Realme GT รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false },
@@ -320,10 +324,8 @@ window.onload = async () => {
             if (deepScan.model) {
                  badge.innerHTML = `<i class="fas fa-mobile-alt"></i> ตรวจพบ: ${deepScan.model}`;
                  
-                 // Clean up model name for display (e.g. remove extra text)
+                 // ค้นหาด้วยชื่อรุ่นภาษาคน แทนการใช้รหัส
                  let searchKey = deepScan.model;
-                 if(deepScan.model.includes("RMX3085")) searchKey = "RMX3085";
-
                  document.getElementById('searchInput').value = searchKey;
                  filterDevices();
             } else {
@@ -362,8 +364,8 @@ async function getDetailedDevice() {
                 else if (model.includes("CPH")) detected.brand = "OPPO";
                 else if (model.includes("RMX") || model.toLowerCase().includes("realme")) {
                     detected.brand = "Realme";
-                    // Map RMX3085 specifically if detected
-                    if(model.includes("RMX3085")) detected.model = "Realme 8 (RMX3085)";
+                    // แปลงรหัสโมเดลเป็นชื่อรุ่นภาษาคนทันที
+                    if(model.includes("RMX3085")) detected.model = "Realme 8";
                 }
             }
         } catch(e) { console.log("Client Hints failed", e); }
@@ -376,13 +378,14 @@ async function getDetailedDevice() {
         else if (/Pixel/.test(ua)) detected.brand = "Google";
         else if (/Oppo|CPH|PG/.test(ua)) detected.brand = "OPPO";
         else if (/Xiaomi|Redmi|POCO/.test(ua)) {
-            detected.brand = "Xiaomi"; // Group Redmi/Poco under Xiaomi filter
+            detected.brand = "Xiaomi"; 
         }
         else if (/Vivo|V2/.test(ua)) detected.brand = "Vivo";
         else if (/Huawei|HMA|ELS|ANA/.test(ua)) detected.brand = "Huawei";
         else if (/Realme|RMX/.test(ua)) {
             detected.brand = "Realme";
-             if(ua.includes("RMX3085")) detected.model = "Realme 8 (RMX3085)";
+             // แปลงรหัสโมเดลเป็นชื่อรุ่นภาษาคน (Fallback)
+             if(ua.includes("RMX3085")) detected.model = "Realme 8";
         }
         else if (/OnePlus/.test(ua)) detected.brand = "OnePlus";
         else if (/Sony/.test(ua)) detected.brand = "Sony";
@@ -421,10 +424,7 @@ function filterDevices() {
         // Group sub-brands for filter logic
         let itemBrandForFilter = item.brand;
         if (currentBrandFilter === 'Xiaomi' && (item.brand === 'Xiaomi' || item.brand === 'Redmi' || item.brand === 'POCO')) {
-             // Allow Redmi/Poco to show when Xiaomi is selected if we wanted strict grouping, 
-             // but currently our data array has "Xiaomi" as brand for most redmi phones.
-             // Actually, in my data above I used brand: "Xiaomi" for Redmi phones too.
-             // For ease, let's just use strict matching.
+             // Allow Redmi/Poco to show when Xiaomi is selected
         }
 
         const matchBrand = currentBrandFilter === 'All' || currentBrandFilter === 'Android (General)' || item.brand === currentBrandFilter;
