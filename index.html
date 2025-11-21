@@ -162,7 +162,7 @@
 
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                    <input type="text" id="searchInput" onkeyup="filterDevices()" placeholder="พิมพ์ชื่อรุ่น (เช่น iPhone 14, S24...)" 
+                    <input type="text" id="searchInput" onkeyup="filterDevices()" placeholder="พิมพ์ชื่อรุ่น (เช่น iPhone 14, A54, Y12...)" 
                         class="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                 </div>
             </div>
@@ -182,7 +182,7 @@
 
 <script>
 // ==========================================
-// DATA STORE
+// DATA STORE (COMPREHENSIVE)
 // ==========================================
 const esimData = [
     // --- APPLE (Supported) ---
@@ -201,7 +201,7 @@ const esimData = [
     { brand: "Apple", model: "iPhone X", series: "iPhone X", note: "รุ่นนี้เก่าเกินไป ไม่รองรับ eSIM", supported: false },
     { brand: "Apple", model: "iPhone 8, 8 Plus", series: "iPhone 8 Series", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
     { brand: "Apple", model: "iPhone 7, 7 Plus", series: "iPhone 7 Series", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
-    { brand: "Apple", model: "iPhone 6s, 6s Plus, 6, SE (Gen 1)", series: "iPhone 6s / SE1 หรือต่ำกว่า", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Apple", model: "iPhone 6s, 6, SE (Gen 1), 5s", series: "iPhone 6s / SE1 / 6 / 5", note: "ไม่รองรับ eSIM", supported: false },
 
     // --- SAMSUNG (Supported) ---
     { brand: "Samsung", model: "S25, S25+, S25 Ultra", series: "Galaxy S25 Series", note: "รุ่นใหม่ล่าสุด", supported: true },
@@ -212,43 +212,96 @@ const esimData = [
     { brand: "Samsung", model: "S20, S20+, S20 Ultra", series: "Galaxy S20 Series", note: "S20 FE/Lite ส่วนใหญ่ไม่รองรับ", supported: true },
     { brand: "Samsung", model: "Z Fold/Flip 3, 4, 5, 6, 7", series: "Galaxy Z Fold/Flip Series", note: "", supported: true },
     { brand: "Samsung", model: "Note 20, Note 20 Ultra", series: "Galaxy Note 20", note: "", supported: true },
-    { brand: "Samsung", model: "A55, A54, A35 5G", series: "Galaxy A Series (ใหม่)", note: "เฉพาะโมเดลบางประเทศ", supported: true },
+    { brand: "Samsung", model: "A55, A54, A35 5G", series: "Galaxy A55 / A54 / A35", note: "เฉพาะโมเดลบางประเทศ", supported: true },
+    { brand: "Samsung", model: "XCover6 Pro, XCover7", series: "Galaxy XCover", note: "", supported: true },
 
     // --- SAMSUNG (NOT Supported) ---
-    { brand: "Samsung", model: "S10, S10+, S10e", series: "Galaxy S10 Series", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
-    { brand: "Samsung", model: "S9, S9+, Note 9", series: "Galaxy S9 / Note 9", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
-    { brand: "Samsung", model: "Note 10, Note 10+", series: "Galaxy Note 10 Series", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
-    { brand: "Samsung", model: "A50, A51, A70, A71, A30, A20", series: "Galaxy A Series (เก่า)", note: "A Series รุ่นเก่าไม่รองรับ eSIM", supported: false },
+    { brand: "Samsung", model: "S10, S10+, S10e, Note 10", series: "Galaxy S10 / Note 10", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
+    { brand: "Samsung", model: "S9, S8, Note 9, Note 8", series: "Galaxy S9 / Note 9 (เก่า)", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
+    { brand: "Samsung", model: "A53, A73, A52, A72, A32", series: "Galaxy A Series (กลางเก่า)", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Samsung", model: "A12, A13, A14, A15, A23, A24", series: "Galaxy A Series (รุ่นเล็ก)", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Samsung", model: "A50, A51, A70, A71, A30, A20", series: "Galaxy A Series (รุ่นเก่า)", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Samsung", model: "J7, J7 Pro, J Series, Grand", series: "Galaxy J / Grand", note: "ไม่รองรับ eSIM", supported: false },
 
-    // --- REALME (New) ---
+    // --- REALME (Supported) ---
     { brand: "Realme", model: "Realme 12 Pro+ 5G", series: "Realme 12 Pro+", note: "เฉพาะเครื่องศูนย์ไทย/บางประเทศ", supported: true },
     { brand: "Realme", model: "Realme GT 7 Pro, 14 Pro+", series: "Realme รุ่นใหม่ (2025)", note: "รุ่นใหม่ที่รองรับ", supported: true },
     
     // --- REALME (NOT Supported) ---
-    // Added specific model mapping for RMX3085
     { brand: "Realme", model: "Realme 8 (RMX3085), 8 Pro", series: "Realme 8 Series", note: "ไม่รองรับ eSIM", supported: false },
-    { brand: "Realme", model: "Realme 11, 10, 9 Pro/Plus", series: "Realme Number Series (เก่า)", note: "ไม่รองรับ eSIM", supported: false },
-    { brand: "Realme", model: "Realme C67, C55, C Series", series: "Realme C Series", note: "ไม่รองรับ eSIM", supported: false },
-    { brand: "Realme", model: "GT Master, GT Neo 3/5", series: "Realme GT รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Realme", model: "Realme 9, 10, 11 (Pro/Plus)", series: "Realme Number Series (เก่า)", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Realme", model: "Realme C67, C55, C35, C Series", series: "Realme C Series", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Realme", model: "GT Master, GT Neo 3/5, GT 2", series: "Realme GT รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false },
 
-    // --- GOOGLE ---
+    // --- GOOGLE (Supported) ---
     { brand: "Google", model: "Pixel 4 ถึง 10 Series", series: "Pixel 4 - 10 Series", note: "รองรับ", supported: true },
+    
+    // --- GOOGLE (Not Supported) ---
     { brand: "Google", model: "Pixel 3, 3XL, 2, 1", series: "Pixel 1-3 Series", note: "รุ่นเก่า/บางประเทศ ไม่รองรับ", supported: false },
 
-    // --- XIAOMI / REDMI ---
+    // --- XIAOMI / REDMI (Supported) ---
     { brand: "Xiaomi", model: "Xiaomi 15, 14, 13, 12T Pro", series: "Xiaomi Flagship (Global)", note: "เฉพาะเครื่อง Global", supported: true },
     { brand: "Xiaomi", model: "Redmi Note 13 Pro/Pro+, 14 Pro+", series: "Redmi Note Pro+ (Global)", note: "Global Only", supported: true },
-    { brand: "Xiaomi", model: "Xiaomi 11, 10, Mi 9", series: "Xiaomi รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false },
-    { brand: "Xiaomi", model: "Redmi Note 12, 11, 10", series: "Redmi Note (ทั่วไป)", note: "รุ่นปกติส่วนใหญ่ไม่รองรับ", supported: false },
+    
+    // --- XIAOMI / REDMI (Not Supported) ---
+    { brand: "Xiaomi", model: "Xiaomi 11T, 10T, 11, 10", series: "Xiaomi T Series / รุ่นเก่า", note: "ส่วนใหญ่ไม่รองรับ", supported: false },
+    { brand: "Xiaomi", model: "Redmi Note 12, 11, 10, 9", series: "Redmi Note (ทั่วไป)", note: "รุ่นปกติส่วนใหญ่ไม่รองรับ", supported: false },
+    { brand: "Xiaomi", model: "Redmi 9, 10, 12, A1, A2", series: "Redmi รุ่นประหยัด", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Xiaomi", model: "POCO F5, F4, X5, X4, M Series", series: "POCO Series", note: "ส่วนใหญ่ไม่รองรับ eSIM", supported: false },
 
-    // --- OPPO / VIVO / OTHERS ---
-    { brand: "OPPO", model: "Find X8, X5, X3 Pro, Find N/Flip", series: "OPPO Flagship", note: "", supported: true },
-    { brand: "OPPO", model: "Reno 8, 7, 6, 5, A Series", series: "OPPO Reno/A (ทั่วไป)", note: "ส่วนใหญ่ไม่รองรับ eSIM", supported: false },
-    { brand: "Vivo", model: "X100, X90, V40 (Global)", series: "Vivo X/V Series (ใหม่)", note: "Global Only", supported: true },
-    { brand: "Vivo", model: "V27, V25, Y Series", series: "Vivo รุ่นทั่วไป", note: "ไม่รองรับ eSIM", supported: false },
-    { brand: "Motorola", model: "Razr Series, Edge 40/50", series: "Motorola Razr/Edge", note: "", supported: true },
-    { brand: "Huawei", model: "P40, Mate 40 ขึ้นไป", series: "Huawei P40+", note: "", supported: true },
-    { brand: "Huawei", model: "P30, Mate 20, Nova", series: "Huawei รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false }
+    // --- OPPO (Supported) ---
+    { brand: "OPPO", model: "Find X8, X5, X3 Pro", series: "OPPO Find X Series", note: "Flagship เท่านั้น", supported: true },
+    { brand: "OPPO", model: "Find N3, N3 Flip, N2 Flip", series: "OPPO Find N (พับได้)", note: "รองรับ", supported: true },
+    { brand: "OPPO", model: "Reno 11 Pro 5G (Global)", series: "Reno 11 Pro (บางประเทศ)", note: "เช็ค Model ก่อน", supported: true },
+    
+    // --- OPPO (Not Supported) ---
+    { brand: "OPPO", model: "Reno 10, 9, 8, 7, 6, 5", series: "OPPO Reno Series (ทั่วไป)", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "OPPO", model: "A78, A79, A58, A38, A18", series: "OPPO A Series (ใหม่)", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "OPPO", model: "A15, A16, A54, A74, A94", series: "OPPO A Series (เก่า)", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "OPPO", model: "F Series, K Series", series: "OPPO F/K Series", note: "ไม่รองรับ eSIM", supported: false },
+
+    // --- VIVO (Supported) ---
+    { brand: "Vivo", model: "X100, X90 Pro, X80 Pro", series: "Vivo X Series (Global)", note: "เฉพาะ Global", supported: true },
+    { brand: "Vivo", model: "V40 (Europe), V29 (Europe)", series: "Vivo V Series (บางโซน)", note: "เครื่องไทยส่วนใหญ่ไม่รองรับ", supported: true },
+
+    // --- VIVO (Not Supported) ---
+    { brand: "Vivo", model: "V30, V27, V25, V23, V21", series: "Vivo V Series (ไทย)", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Vivo", model: "Y100, Y36, Y27, Y17, Y12", series: "Vivo Y Series", note: "ไม่รองรับ eSIM", supported: false },
+
+    // --- ONEPLUS (Supported) ---
+    { brand: "OnePlus", model: "OnePlus 12, 11", series: "OnePlus Flagship", note: "", supported: true },
+    { brand: "OnePlus", model: "OnePlus Open", series: "OnePlus Open (Fold)", note: "", supported: true },
+    
+    // --- ONEPLUS (Not Supported) ---
+    { brand: "OnePlus", model: "OnePlus 10, 9, 8T, 8", series: "OnePlus รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "OnePlus", model: "Nord 3, Nord CE 3, CE 2", series: "OnePlus Nord Series", note: "ไม่รองรับ eSIM", supported: false },
+
+    // --- HUAWEI (Supported) ---
+    { brand: "Huawei", model: "P40, P40 Pro, Mate 40 Pro", series: "Huawei P40/Mate 40", note: "ไม่มี Google Service", supported: true },
+    { brand: "Huawei", model: "Pura 70, P60 Pro", series: "Huawei Pura/P60", note: "ใส่เคส 5G ได้ในบางรุ่น", supported: true },
+
+    // --- HUAWEI (Not Supported) ---
+    { brand: "Huawei", model: "P30, P20, Mate 20, Mate 10", series: "Huawei รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Huawei", model: "Nova 11, 10, 9, 7, Y Series", series: "Huawei Nova / Y", note: "ไม่รองรับ eSIM", supported: false },
+
+    // --- HONOR (Supported) ---
+    { brand: "Honor", model: "Magic 6 Pro, Magic 5 Pro, V2", series: "Honor Magic Series", note: "", supported: true },
+    { brand: "Honor", model: "Honor 90", series: "Honor 90", note: "บางโมเดลเท่านั้น", supported: true },
+
+    // --- HONOR (Not Supported) ---
+    { brand: "Honor", model: "Honor 70, 50, X9a, X9b, X8", series: "Honor X / Number Series", note: "ไม่รองรับ eSIM", supported: false },
+
+    // --- SONY (Supported) ---
+    { brand: "Sony", model: "Xperia 1 V, 1 IV, 5 V, 10 V", series: "Xperia IV / V Series", note: "รุ่นใหม่รองรับ", supported: true },
+
+    // --- MOTOROLA (Supported) ---
+    { brand: "Motorola", model: "Razr 40/50 Ultra, Edge 40/50", series: "Motorola Razr/Edge", note: "", supported: true },
+    { brand: "Motorola", model: "G54, G84", series: "Moto G (5G)", note: "บางประเทศ", supported: true },
+
+    // --- OTHERS (Japan/Misc) ---
+    { brand: "Other", model: "Sharp Aquos R8, R7, Sense 8", series: "Sharp Aquos", note: "เครื่องญี่ปุ่น", supported: true },
+    { brand: "Other", model: "Rakuten Hand, Mini, Big", series: "Rakuten Mobile", note: "", supported: true },
+    { brand: "Other", model: "Nokia G60 5G, X30 5G", series: "Nokia 5G", note: "", supported: true }
 ];
 
 let currentBrandFilter = 'All';
@@ -264,7 +317,6 @@ window.onload = async () => {
             setBrandFilter(deepScan.brand);
             const badge = document.getElementById('detectedBadge');
             
-            // Special check if model contains RMX code to auto-select
             if (deepScan.model) {
                  badge.innerHTML = `<i class="fas fa-mobile-alt"></i> ตรวจพบ: ${deepScan.model}`;
                  
@@ -323,13 +375,17 @@ async function getDetailedDevice() {
         else if (/Samsung|SM-|GT-/.test(ua)) detected.brand = "Samsung";
         else if (/Pixel/.test(ua)) detected.brand = "Google";
         else if (/Oppo|CPH|PG/.test(ua)) detected.brand = "OPPO";
-        else if (/Xiaomi|Redmi|POCO/.test(ua)) detected.brand = "Xiaomi";
+        else if (/Xiaomi|Redmi|POCO/.test(ua)) {
+            detected.brand = "Xiaomi"; // Group Redmi/Poco under Xiaomi filter
+        }
         else if (/Vivo|V2/.test(ua)) detected.brand = "Vivo";
         else if (/Huawei|HMA|ELS|ANA/.test(ua)) detected.brand = "Huawei";
         else if (/Realme|RMX/.test(ua)) {
             detected.brand = "Realme";
              if(ua.includes("RMX3085")) detected.model = "Realme 8 (RMX3085)";
         }
+        else if (/OnePlus/.test(ua)) detected.brand = "OnePlus";
+        else if (/Sony/.test(ua)) detected.brand = "Sony";
     }
 
     return detected;
@@ -362,7 +418,17 @@ function filterDevices() {
     const list = document.getElementById('deviceList');
     
     const filtered = esimData.filter(item => {
+        // Group sub-brands for filter logic
+        let itemBrandForFilter = item.brand;
+        if (currentBrandFilter === 'Xiaomi' && (item.brand === 'Xiaomi' || item.brand === 'Redmi' || item.brand === 'POCO')) {
+             // Allow Redmi/Poco to show when Xiaomi is selected if we wanted strict grouping, 
+             // but currently our data array has "Xiaomi" as brand for most redmi phones.
+             // Actually, in my data above I used brand: "Xiaomi" for Redmi phones too.
+             // For ease, let's just use strict matching.
+        }
+
         const matchBrand = currentBrandFilter === 'All' || currentBrandFilter === 'Android (General)' || item.brand === currentBrandFilter;
+        
         const matchSearch = item.model.toLowerCase().includes(query) || 
                           item.series.toLowerCase().includes(query) ||
                           item.brand.toLowerCase().includes(query);
