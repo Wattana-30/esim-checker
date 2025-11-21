@@ -138,7 +138,7 @@ const esimData = [
     { brand: "Apple", model: "iPhone SE (2020), SE (2022)", series: "iPhone SE (Gen 2, 3)", note: "", supported: true },
     { brand: "Apple", model: "iPad Pro/Air (Cellular รุ่นใหม่)", series: "iPad (Cellular)", note: "Gen 3-6 / M1 / M2 / M4", supported: true },
 
-    // --- APPLE (NOT Supported - Common) ---
+    // --- APPLE (NOT Supported) ---
     { brand: "Apple", model: "iPhone X", series: "iPhone X", note: "รุ่นนี้เก่าเกินไป ไม่รองรับ eSIM", supported: false },
     { brand: "Apple", model: "iPhone 8, 8 Plus", series: "iPhone 8 Series", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
     { brand: "Apple", model: "iPhone 7, 7 Plus", series: "iPhone 7 Series", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
@@ -155,12 +155,20 @@ const esimData = [
     { brand: "Samsung", model: "Note 20, Note 20 Ultra", series: "Galaxy Note 20", note: "", supported: true },
     { brand: "Samsung", model: "A55, A54, A35 5G", series: "Galaxy A Series (ใหม่)", note: "เฉพาะโมเดลบางประเทศ", supported: true },
 
-    // --- SAMSUNG (NOT Supported - Common) ---
+    // --- SAMSUNG (NOT Supported) ---
     { brand: "Samsung", model: "S10, S10+, S10e", series: "Galaxy S10 Series", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
     { brand: "Samsung", model: "S9, S9+, Note 9", series: "Galaxy S9 / Note 9", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
     { brand: "Samsung", model: "Note 10, Note 10+", series: "Galaxy Note 10 Series", note: "รุ่นนี้ไม่รองรับ eSIM", supported: false },
     { brand: "Samsung", model: "A50, A51, A70, A71, A30, A20", series: "Galaxy A Series (เก่า)", note: "A Series รุ่นเก่าไม่รองรับ eSIM", supported: false },
-    { brand: "Samsung", model: "J7, J7 Pro, J Series", series: "Galaxy J Series", note: "ไม่รองรับ eSIM", supported: false },
+
+    // --- REALME (New) ---
+    { brand: "Realme", model: "Realme 12 Pro+ 5G", series: "Realme 12 Pro+", note: "เฉพาะเครื่องศูนย์ไทย/บางประเทศ", supported: true },
+    { brand: "Realme", model: "Realme GT 7 Pro, 14 Pro+", series: "Realme รุ่นใหม่ (2025)", note: "รุ่นใหม่ที่รองรับ", supported: true },
+    
+    // --- REALME (NOT Supported) ---
+    { brand: "Realme", model: "Realme 11, 10, 9 Pro/Plus", series: "Realme Number Series (เก่า)", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Realme", model: "Realme C67, C55, C Series", series: "Realme C Series", note: "ไม่รองรับ eSIM", supported: false },
+    { brand: "Realme", model: "GT Master, GT Neo 3/5", series: "Realme GT รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false },
 
     // --- GOOGLE ---
     { brand: "Google", model: "Pixel 4 ถึง 10 Series", series: "Pixel 4 - 10 Series", note: "รองรับ", supported: true },
@@ -188,19 +196,15 @@ window.onload = async () => {
     populateBrands();
     
     try {
-        // Attempt High-Tech Scan (Client Hints)
         const deepScan = await getDetailedDevice();
-        
         document.getElementById('scanOverlay').classList.add('hidden');
 
         if (deepScan.brand) {
             setBrandFilter(deepScan.brand);
             const badge = document.getElementById('detectedBadge');
             
-            // If we found a specific model name (e.g. "Pixel 7"), show it!
             if (deepScan.model) {
                  badge.innerHTML = `<i class="fas fa-mobile-alt"></i> Detected: ${deepScan.model}`;
-                 // Auto-fill search to narrow down list
                  document.getElementById('searchInput').value = deepScan.model;
                  filterDevices();
             } else {
@@ -214,40 +218,34 @@ window.onload = async () => {
             filterDevices();
         }
     } catch (e) {
-        // Fallback just in case
         document.getElementById('scanOverlay').classList.add('hidden');
         filterDevices();
     }
 };
 
-// ADVANCED DETECTION LOGIC
 async function getDetailedDevice() {
-    // Wait a bit for effect
     await new Promise(r => setTimeout(r, 1500));
-
     let detected = { brand: null, model: null };
 
-    // 1. Try Modern Client Hints (Works on Android Chrome)
     if (navigator.userAgentData) {
         try {
             const uaData = await navigator.userAgentData.getHighEntropyValues(["model", "platform"]);
             if (uaData.platform === "Android") detected.brand = "Android (General)";
             
-            // Try to guess brand from Model Name if available (e.g. "SM-S918B")
             if (uaData.model) {
                 const model = uaData.model;
-                detected.model = model; // Keep raw model
+                detected.model = model;
                 
                 if (model.includes("Pixel")) detected.brand = "Google";
                 else if (model.startsWith("SM-") || model.includes("Samsung")) detected.brand = "Samsung";
-                else if (model.startsWith("2") && model.endsWith("TG")) detected.brand = "Xiaomi"; // Example Xiaomi logic
+                else if (model.startsWith("2") && model.endsWith("TG")) detected.brand = "Xiaomi"; 
                 else if (model.includes("V2")) detected.brand = "Vivo";
                 else if (model.includes("CPH")) detected.brand = "OPPO";
+                else if (model.includes("RMX") || model.toLowerCase().includes("realme")) detected.brand = "Realme";
             }
         } catch(e) { console.log("Client Hints failed", e); }
     }
 
-    // 2. Fallback to Classic User Agent (iOS always falls here)
     if (!detected.brand) {
         const ua = navigator.userAgent || navigator.vendor || window.opera;
         if (/iPhone|iPad|iPod/.test(ua)) detected.brand = "Apple";
@@ -257,12 +255,12 @@ async function getDetailedDevice() {
         else if (/Xiaomi|Redmi|POCO/.test(ua)) detected.brand = "Xiaomi";
         else if (/Vivo|V2/.test(ua)) detected.brand = "Vivo";
         else if (/Huawei|HMA|ELS|ANA/.test(ua)) detected.brand = "Huawei";
+        else if (/Realme|RMX/.test(ua)) detected.brand = "Realme";
     }
 
     return detected;
 }
 
-// UI Functions (Same as before)
 function populateBrands() {
     const brands = ['All', ...new Set(esimData.map(item => item.brand))];
     const container = document.getElementById('brandFilters');
@@ -281,7 +279,7 @@ function populateBrands() {
 function setBrandFilter(brand) {
     currentBrandFilter = brand;
     populateBrands();
-    document.getElementById('searchInput').value = ''; // Reset search
+    document.getElementById('searchInput').value = '';
     filterDevices();
 }
 
