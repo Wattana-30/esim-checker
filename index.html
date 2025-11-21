@@ -80,7 +80,7 @@
             <p id="resultDesc" class="text-gray-600 mb-6"></p>
             
             <div id="resultDetailBox" class="w-full bg-gray-50 rounded-xl p-4 border mb-8 hidden">
-                <p class="text-xs text-gray-400 uppercase">รุ่นที่คุณเลือก</p>
+                <p class="text-xs text-gray-400 uppercase">รุ่นที่คุณเลือก / ตรวจพบ</p>
                 <p id="resultModel" class="text-lg font-bold text-gray-800 mt-1"></p>
                 <p id="resultNote" class="text-sm mt-2"></p>
             </div>
@@ -225,6 +225,8 @@ const esimData = [
     { brand: "Realme", model: "Realme GT 7 Pro, 14 Pro+", series: "Realme รุ่นใหม่ (2025)", note: "รุ่นใหม่ที่รองรับ", supported: true },
     
     // --- REALME (NOT Supported) ---
+    // Added specific model mapping for RMX3085
+    { brand: "Realme", model: "Realme 8 (RMX3085), 8 Pro", series: "Realme 8 Series", note: "ไม่รองรับ eSIM", supported: false },
     { brand: "Realme", model: "Realme 11, 10, 9 Pro/Plus", series: "Realme Number Series (เก่า)", note: "ไม่รองรับ eSIM", supported: false },
     { brand: "Realme", model: "Realme C67, C55, C Series", series: "Realme C Series", note: "ไม่รองรับ eSIM", supported: false },
     { brand: "Realme", model: "GT Master, GT Neo 3/5", series: "Realme GT รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false },
@@ -262,15 +264,23 @@ window.onload = async () => {
             setBrandFilter(deepScan.brand);
             const badge = document.getElementById('detectedBadge');
             
+            // Special check if model contains RMX code to auto-select
             if (deepScan.model) {
-                 badge.innerHTML = `<i class="fas fa-mobile-alt"></i> Detected: ${deepScan.model}`;
-                 document.getElementById('searchInput').value = deepScan.model;
+                 badge.innerHTML = `<i class="fas fa-mobile-alt"></i> ตรวจพบ: ${deepScan.model}`;
+                 
+                 // Clean up model name for display (e.g. remove extra text)
+                 let searchKey = deepScan.model;
+                 if(deepScan.model.includes("RMX3085")) searchKey = "RMX3085";
+
+                 document.getElementById('searchInput').value = searchKey;
                  filterDevices();
             } else {
                  badge.innerHTML = `<i class="fab fa-${deepScan.brand.toLowerCase()}"></i> ${deepScan.brand} Detected`;
             }
             
             badge.classList.remove('hidden');
+            document.getElementById('instructionText').innerHTML = 
+                `ระบบตรวจพบ <b>${deepScan.model || deepScan.brand}</b><br>กรุณาจิ้มที่รุ่นมือถือของคุณด้านล่างเพื่อยืนยัน`;
         } else {
             filterDevices();
         }
@@ -298,7 +308,11 @@ async function getDetailedDevice() {
                 else if (model.startsWith("2") && model.endsWith("TG")) detected.brand = "Xiaomi"; 
                 else if (model.includes("V2")) detected.brand = "Vivo";
                 else if (model.includes("CPH")) detected.brand = "OPPO";
-                else if (model.includes("RMX") || model.toLowerCase().includes("realme")) detected.brand = "Realme";
+                else if (model.includes("RMX") || model.toLowerCase().includes("realme")) {
+                    detected.brand = "Realme";
+                    // Map RMX3085 specifically if detected
+                    if(model.includes("RMX3085")) detected.model = "Realme 8 (RMX3085)";
+                }
             }
         } catch(e) { console.log("Client Hints failed", e); }
     }
@@ -312,7 +326,10 @@ async function getDetailedDevice() {
         else if (/Xiaomi|Redmi|POCO/.test(ua)) detected.brand = "Xiaomi";
         else if (/Vivo|V2/.test(ua)) detected.brand = "Vivo";
         else if (/Huawei|HMA|ELS|ANA/.test(ua)) detected.brand = "Huawei";
-        else if (/Realme|RMX/.test(ua)) detected.brand = "Realme";
+        else if (/Realme|RMX/.test(ua)) {
+            detected.brand = "Realme";
+             if(ua.includes("RMX3085")) detected.model = "Realme 8 (RMX3085)";
+        }
     }
 
     return detected;
