@@ -35,20 +35,17 @@
             transform: scale(0.98);
             background-color: #eff6ff;
         }
-        /* Hide scrollbar for Chrome, Safari and Opera */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
-        /* Hide scrollbar for IE, Edge and Firefox */
         .no-scrollbar {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-    <!-- Main Container -->
     <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden relative flex flex-col h-[85vh]">
         
         <!-- Scanning Animation Overlay -->
@@ -58,7 +55,7 @@
                 <i class="fas fa-mobile-alt text-6xl text-blue-400 opacity-80"></i>
             </div>
             <p class="text-xl font-bold animate-pulse">กำลังตรวจสอบเครื่อง...</p>
-            <p class="text-sm text-gray-400 mt-2">Analyzing device info...</p>
+            <p id="scanDetailText" class="text-sm text-gray-400 mt-2">Reading hardware info...</p>
         </div>
 
         <!-- Header -->
@@ -70,13 +67,13 @@
                     </h1>
                     <p class="text-xs text-gray-500">เช็ครุ่นมือถือที่รองรับ eSIM</p>
                 </div>
-                <div id="detectedBadge" class="hidden px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
-                    <!-- JS will fill this e.g. "Detected: Samsung" -->
+                <div id="detectedBadge" class="hidden px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium flex items-center gap-1">
+                    <!-- JS will fill this -->
                 </div>
             </div>
         </div>
 
-        <!-- Result View (Initially Hidden) -->
+        <!-- Result View -->
         <div id="resultView" class="hidden absolute inset-0 bg-white z-40 flex-col items-center justify-center p-6 text-center animate-fade-in">
             <div id="resultIcon" class="text-6xl mb-4 transition-transform duration-500 hover:scale-110"></div>
             <h2 id="resultTitle" class="text-3xl font-bold mb-2"></h2>
@@ -93,20 +90,17 @@
             </button>
         </div>
 
-        <!-- Selection Area (Scrollable) -->
+        <!-- Selection Area -->
         <div class="flex-1 overflow-hidden flex flex-col">
-            <!-- Search & Filter -->
             <div class="p-4 pb-2 bg-white border-b">
                 <p id="instructionText" class="text-sm text-gray-600 mb-3">
-                    กรุณา <span class="text-blue-600 font-bold">เลือกรุ่นมือถือของคุณ</span> จากรายการด้านล่างเพื่อยืนยัน
+                    กรุณา <span class="text-blue-600 font-bold">เลือกรุ่นมือถือของคุณ</span> จากรายการด้านล่าง
                 </p>
                 
-                <!-- Brand Filters -->
                 <div class="flex gap-2 overflow-x-auto pb-3 no-scrollbar" id="brandFilters">
                     <!-- JS Injected -->
                 </div>
 
-                <!-- Search Input -->
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                     <input type="text" id="searchInput" onkeyup="filterDevices()" placeholder="ค้นหาชื่อรุ่น (เช่น iPhone X, S10...)" 
@@ -114,12 +108,10 @@
                 </div>
             </div>
 
-            <!-- List -->
             <div id="deviceList" class="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50">
                 <!-- JS Injected Items -->
             </div>
 
-            <!-- Not Found Button -->
             <div class="p-4 bg-white border-t shadow-lg z-20">
                 <button onclick="showCustomNotSupported()" class="w-full py-3 text-gray-500 font-medium text-sm border border-gray-200 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
                     <i class="far fa-question-circle"></i>
@@ -127,13 +119,11 @@
                 </button>
             </div>
         </div>
-        
     </div>
 
 <script>
 // ==========================================
 // DATA STORE
-// supported: true = Green, false = Red
 // ==========================================
 const esimData = [
     // --- APPLE (Supported) ---
@@ -192,42 +182,87 @@ const esimData = [
     { brand: "Huawei", model: "P30, Mate 20, Nova", series: "Huawei รุ่นเก่า", note: "ไม่รองรับ eSIM", supported: false }
 ];
 
-// ==========================================
-// LOGIC
-// ==========================================
-
 let currentBrandFilter = 'All';
 
-window.onload = () => {
+window.onload = async () => {
     populateBrands();
-    setTimeout(() => {
-        const detected = detectBrandFromUA();
+    
+    try {
+        // Attempt High-Tech Scan (Client Hints)
+        const deepScan = await getDetailedDevice();
+        
         document.getElementById('scanOverlay').classList.add('hidden');
-        if (detected) {
-            setBrandFilter(detected);
+
+        if (deepScan.brand) {
+            setBrandFilter(deepScan.brand);
             const badge = document.getElementById('detectedBadge');
-            badge.innerHTML = `<i class="fas fa-magic mr-1"></i> ตรวจพบ: ${detected}`;
+            
+            // If we found a specific model name (e.g. "Pixel 7"), show it!
+            if (deepScan.model) {
+                 badge.innerHTML = `<i class="fas fa-mobile-alt"></i> Detected: ${deepScan.model}`;
+                 // Auto-fill search to narrow down list
+                 document.getElementById('searchInput').value = deepScan.model;
+                 filterDevices();
+            } else {
+                 badge.innerHTML = `<i class="fab fa-${deepScan.brand.toLowerCase()}"></i> ${deepScan.brand} Detected`;
+            }
+            
             badge.classList.remove('hidden');
             document.getElementById('instructionText').innerHTML = 
-                `ระบบตรวจพบเครื่อง <b>${detected}</b><br>กรุณาจิ้มที่รุ่นมือถือของคุณด้านล่าง`;
+                `ระบบตรวจพบ <b>${deepScan.model || deepScan.brand}</b><br>กรุณาจิ้มที่รุ่นมือถือของคุณด้านล่างเพื่อยืนยัน`;
         } else {
             filterDevices();
         }
-    }, 1500);
+    } catch (e) {
+        // Fallback just in case
+        document.getElementById('scanOverlay').classList.add('hidden');
+        filterDevices();
+    }
 };
 
-function detectBrandFromUA() {
-    const ua = navigator.userAgent || navigator.vendor || window.opera;
-    if (/iPhone|iPad|iPod/.test(ua)) return "Apple";
-    if (/Samsung|SM-|GT-/.test(ua)) return "Samsung";
-    if (/Pixel/.test(ua)) return "Google";
-    if (/Oppo|CPH|PG/.test(ua)) return "OPPO";
-    if (/Xiaomi|Redmi|POCO/.test(ua)) return "Xiaomi";
-    if (/Vivo|V2/.test(ua)) return "Vivo";
-    if (/Huawei|HMA|ELS|ANA/.test(ua)) return "Huawei";
-    return null; 
+// ADVANCED DETECTION LOGIC
+async function getDetailedDevice() {
+    // Wait a bit for effect
+    await new Promise(r => setTimeout(r, 1500));
+
+    let detected = { brand: null, model: null };
+
+    // 1. Try Modern Client Hints (Works on Android Chrome)
+    if (navigator.userAgentData) {
+        try {
+            const uaData = await navigator.userAgentData.getHighEntropyValues(["model", "platform"]);
+            if (uaData.platform === "Android") detected.brand = "Android (General)";
+            
+            // Try to guess brand from Model Name if available (e.g. "SM-S918B")
+            if (uaData.model) {
+                const model = uaData.model;
+                detected.model = model; // Keep raw model
+                
+                if (model.includes("Pixel")) detected.brand = "Google";
+                else if (model.startsWith("SM-") || model.includes("Samsung")) detected.brand = "Samsung";
+                else if (model.startsWith("2") && model.endsWith("TG")) detected.brand = "Xiaomi"; // Example Xiaomi logic
+                else if (model.includes("V2")) detected.brand = "Vivo";
+                else if (model.includes("CPH")) detected.brand = "OPPO";
+            }
+        } catch(e) { console.log("Client Hints failed", e); }
+    }
+
+    // 2. Fallback to Classic User Agent (iOS always falls here)
+    if (!detected.brand) {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        if (/iPhone|iPad|iPod/.test(ua)) detected.brand = "Apple";
+        else if (/Samsung|SM-|GT-/.test(ua)) detected.brand = "Samsung";
+        else if (/Pixel/.test(ua)) detected.brand = "Google";
+        else if (/Oppo|CPH|PG/.test(ua)) detected.brand = "OPPO";
+        else if (/Xiaomi|Redmi|POCO/.test(ua)) detected.brand = "Xiaomi";
+        else if (/Vivo|V2/.test(ua)) detected.brand = "Vivo";
+        else if (/Huawei|HMA|ELS|ANA/.test(ua)) detected.brand = "Huawei";
+    }
+
+    return detected;
 }
 
+// UI Functions (Same as before)
 function populateBrands() {
     const brands = ['All', ...new Set(esimData.map(item => item.brand))];
     const container = document.getElementById('brandFilters');
@@ -246,7 +281,7 @@ function populateBrands() {
 function setBrandFilter(brand) {
     currentBrandFilter = brand;
     populateBrands();
-    document.getElementById('searchInput').value = '';
+    document.getElementById('searchInput').value = ''; // Reset search
     filterDevices();
 }
 
@@ -255,7 +290,7 @@ function filterDevices() {
     const list = document.getElementById('deviceList');
     
     const filtered = esimData.filter(item => {
-        const matchBrand = currentBrandFilter === 'All' || item.brand === currentBrandFilter;
+        const matchBrand = currentBrandFilter === 'All' || currentBrandFilter === 'Android (General)' || item.brand === currentBrandFilter;
         const matchSearch = item.model.toLowerCase().includes(query) || 
                           item.series.toLowerCase().includes(query) ||
                           item.brand.toLowerCase().includes(query);
@@ -272,7 +307,7 @@ function filterDevices() {
         `;
     } else {
         list.innerHTML = filtered.map((item, index) => `
-            <div onclick="selectResult(${index})" 
+            <div onclick="selectResult(${esimData.indexOf(item)})" 
                 class="device-card bg-white p-4 rounded-xl border border-gray-100 shadow-sm cursor-pointer flex items-center justify-between hover:shadow-md hover:border-blue-200 group">
                 <div class="flex-1 pr-2">
                     <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5 flex items-center gap-2">
@@ -290,23 +325,8 @@ function filterDevices() {
     }
 }
 
-// Unified Result Function
 function selectResult(index) {
-    // Because filter changes indices, we need to find the real item from esimData based on the filtered list logic if we passed index directly, 
-    // BUT easier way: pass the object itself or find it. 
-    // Simpler approach: The `filtered` map above uses the index of the *filtered* array. 
-    // Let's fix the onClick to pass the data directly.
-    
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = esimData.filter(item => {
-        const matchBrand = currentBrandFilter === 'All' || item.brand === currentBrandFilter;
-        const matchSearch = item.model.toLowerCase().includes(query) || 
-                          item.series.toLowerCase().includes(query) ||
-                          item.brand.toLowerCase().includes(query);
-        return matchBrand && matchSearch;
-    });
-    
-    const item = filtered[index];
+    const item = esimData[index];
     showResult(item);
 }
 
@@ -327,7 +347,6 @@ function showResult(item) {
     noteText.innerText = item.note || "";
 
     if (item.supported) {
-        // GREEN STATE
         icon.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
         title.innerText = "รองรับ eSIM";
         title.className = "text-3xl font-bold mb-2 text-green-600";
@@ -335,7 +354,6 @@ function showResult(item) {
         noteText.className = "text-sm text-green-600 mt-2";
         detailBox.className = "w-full bg-green-50 rounded-xl p-4 border border-green-100 mb-8";
     } else {
-        // RED STATE (Specific Model)
         icon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
         title.innerText = "ไม่รองรับ";
         title.className = "text-3xl font-bold mb-2 text-red-600";
