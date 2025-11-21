@@ -90,11 +90,70 @@
             </button>
         </div>
 
+        <!-- Manual Check Modal (USSD Instructions) -->
+        <div id="ussdModal" class="hidden absolute inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center transition-opacity">
+            <div class="bg-white w-full max-w-sm sm:rounded-2xl rounded-t-2xl p-6 animate-slide-up">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-key text-blue-500 mr-2"></i>วิธีเช็คที่ชัวร์ที่สุด</h3>
+                    <button onclick="toggleUSSDModal(false)" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">1</div>
+                        <div>
+                            <p class="font-medium text-gray-800">ไปที่เมนูโทรศัพท์</p>
+                            <p class="text-sm text-gray-500">เหมือนตอนจะกดเบอร์โทรหาคนอื่น</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">2</div>
+                        <div>
+                            <p class="font-medium text-gray-800">กดรหัส <span class="text-xl font-bold text-blue-600 tracking-wider">*#06#</span></p>
+                            <p class="text-sm text-gray-500">แล้วกดโทรออก (บางเครื่องจะขึ้นเองทันที)</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
+                        <p class="text-sm text-gray-600 mb-2">หน้าจอจะแสดงข้อมูลเครื่อง</p>
+                        <div class="inline-block text-left bg-white p-2 border rounded text-xs font-mono text-gray-500">
+                            IMEI1: 356...<br>
+                            IMEI2: 356...<br>
+                            <span class="bg-yellow-100 text-black font-bold px-1">EID: 890...</span>  <-- ต้องมีบรรทัดนี้
+                        </div>
+                        <p class="text-xs text-green-600 mt-2 font-medium"><i class="fas fa-check-circle"></i> ถ้ามี EID = รองรับ eSIM</p>
+                    </div>
+                </div>
+
+                <button onclick="toggleUSSDModal(false)" class="w-full mt-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700">
+                    เข้าใจแล้ว
+                </button>
+            </div>
+        </div>
+
         <!-- Selection Area -->
         <div class="flex-1 overflow-hidden flex flex-col">
             <div class="p-4 pb-2 bg-white border-b">
-                <p id="instructionText" class="text-sm text-gray-600 mb-3">
-                    กรุณา <span class="text-blue-600 font-bold">เลือกรุ่นมือถือของคุณ</span> จากรายการด้านล่าง
+                
+                <!-- USSD Banner Trigger -->
+                <div onclick="toggleUSSDModal(true)" class="mb-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-3 rounded-xl flex items-center justify-between cursor-pointer hover:shadow-md transition-all group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-500 shadow-sm group-hover:scale-110 transition-transform">
+                            <i class="fas fa-hashtag"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-blue-800 text-sm">เช็คชัวร์ด้วยรหัสในเครื่อง</p>
+                            <p class="text-xs text-blue-600">กด *#06# เพื่อดูเลข EID</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right text-blue-300"></i>
+                </div>
+
+                <p id="instructionText" class="text-sm text-gray-600 mb-2">
+                    หรือ <span class="text-gray-800 font-bold">ค้นหารุ่นมือถือ</span> จากรายการ
                 </p>
                 
                 <div class="flex gap-2 overflow-x-auto pb-3 no-scrollbar" id="brandFilters">
@@ -103,7 +162,7 @@
 
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                    <input type="text" id="searchInput" onkeyup="filterDevices()" placeholder="ค้นหาชื่อรุ่น (เช่น iPhone X, S10...)" 
+                    <input type="text" id="searchInput" onkeyup="filterDevices()" placeholder="พิมพ์ชื่อรุ่น (เช่น iPhone 14, S24...)" 
                         class="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
                 </div>
             </div>
@@ -212,8 +271,6 @@ window.onload = async () => {
             }
             
             badge.classList.remove('hidden');
-            document.getElementById('instructionText').innerHTML = 
-                `ระบบตรวจพบ <b>${deepScan.model || deepScan.brand}</b><br>กรุณาจิ้มที่รุ่นมือถือของคุณด้านล่างเพื่อยืนยัน`;
         } else {
             filterDevices();
         }
@@ -376,6 +433,17 @@ function resetApp() {
     view.classList.remove('flex');
     document.getElementById('searchInput').value = '';
     filterDevices();
+}
+
+function toggleUSSDModal(show) {
+    const modal = document.getElementById('ussdModal');
+    if (show) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 }
 </script>
 </body>
