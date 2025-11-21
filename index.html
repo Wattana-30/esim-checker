@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตรวจสอบการรองรับ eSIM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: #3b82f6;
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scan 2s infinite linear;
+            box-shadow: 0 0 10px #3b82f6;
+        }
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .device-card {
+            transition: all 0.3s ease;
+        }
+        .device-card:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Header / Logo Area -->
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden relative">
+        
+        <!-- Scanning Animation Overlay (Only shows during initial check) -->
+        <div id="scanOverlay" class="absolute inset-0 bg-black/80 z-50 flex flex-col items-center justify-center text-white">
+            <div class="relative w-48 h-48 border-2 border-blue-500 rounded-lg flex items-center justify-center mb-4 bg-black/50 backdrop-blur-sm">
+                <div class="scan-line"></div>
+                <i class="fas fa-mobile-alt text-6xl text-blue-400 opacity-80"></i>
+            </div>
+            <p class="text-lg animate-pulse">กำลังตรวจสอบอุปกรณ์...</p>
+            <p class="text-sm text-gray-400 mt-2" id="detectingText">Detecting hardware...</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="p-6">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-3">
+                    <i class="fas fa-sim-card text-2xl text-blue-600"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">eSIM Checker</h1>
+                <p class="text-gray-500 text-sm">ระบบตรวจสอบความรองรับ eSIM</p>
+            </div>
+
+            <!-- Result Section -->
+            <div id="resultContainer" class="hidden transition-all duration-500">
+                
+                <!-- Dynamic Result Card -->
+                <div id="statusCard" class="rounded-xl p-6 text-center mb-6 border-2">
+                    <div id="statusIcon" class="text-5xl mb-3"></div>
+                    <h2 id="statusTitle" class="text-2xl font-bold mb-1"></h2>
+                    <p id="statusMessage" class="text-sm opacity-90 mb-4"></p>
+                    
+                    <div class="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
+                        <p class="text-xs uppercase tracking-wide opacity-70">รุ่นที่ตรวจพบ / เลือก</p>
+                        <p id="deviceModelName" class="text-xl font-semibold mt-1">-</p>
+                        <p id="deviceNote" class="text-xs mt-2 bg-black/10 py-1 px-2 rounded hidden"></p>
+                    </div>
+                </div>
+
+                <!-- Manual Selection Trigger -->
+                <div class="text-center">
+                    <p class="text-sm text-gray-500 mb-2">รุ่นอุปกรณ์ไม่ถูกต้อง?</p>
+                    <button onclick="toggleManualSearch()" class="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center justify-center gap-2 w-full py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors">
+                        <i class="fas fa-search"></i> ค้นหารุ่นมือถือด้วยตัวเอง
+                    </button>
+                </div>
+            </div>
+
+            <!-- Manual Search Section -->
+            <div id="manualSearchSection" class="hidden mt-4 pt-4 border-t border-gray-100">
+                <h3 class="font-semibold text-gray-700 mb-3">เลือกแบรนด์มือถือ</h3>
+                
+                <!-- Brand Filter Buttons -->
+                <div class="flex gap-2 overflow-x-auto pb-2 mb-3 no-scrollbar" id="brandFilters">
+                    <!-- Injected by JS -->
+                </div>
+
+                <div class="relative mb-4">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterDevices()" placeholder="พิมพ์ชื่อรุ่น (เช่น iPhone 15, S24...)" 
+                        class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+
+                <div id="deviceList" class="h-64 overflow-y-auto space-y-2 pr-1">
+                    <!-- Device items injected here -->
+                </div>
+            </div>
+
+        </div>
+        
+        <div class="bg-gray-50 p-3 text-center text-xs text-gray-400 border-t">
+            Powered by eSIM Check System
+        </div>
+    </div>
+
+<script>
+// ==========================================
+// DATA STORE (From your Spreadsheet)
+// ==========================================
+const esimData = [
+    // Apple
+    { brand: "Apple", model: "iPhone 16, 16 Plus, 16 Pro, 16 Pro Max", series: "iPhone 16 Series", note: "รองรับ eSIM คู่ (บางประเทศ)" },
+    { brand: "Apple", model: "iPhone 15, 15 Plus, 15 Pro, 15 Pro Max", series: "iPhone 15 Series", note: "" },
+    { brand: "Apple", model: "iPhone 14, 14 Plus, 14 Pro, 14 Pro Max", series: "iPhone 14 Series", note: "เครื่องศูนย์สหรัฐฯ จะเป็น eSIM เท่านั้น" },
+    { brand: "Apple", model: "iPhone 13, 13 Mini, 13 Pro, 13 Pro Max", series: "iPhone 13 Series", note: "" },
+    { brand: "Apple", model: "iPhone 12, 12 Mini, 12 Pro, 12 Pro Max", series: "iPhone 12 Series", note: "" },
+    { brand: "Apple", model: "iPhone 11, 11 Pro, 11 Pro Max", series: "iPhone 11 Series", note: "" },
+    { brand: "Apple", model: "iPhone XS, XS Max, XR", series: "iPhone XS/XR", note: "" },
+    { brand: "Apple", model: "iPhone SE (2020), SE (2022)", series: "iPhone SE", note: "" },
+    { brand: "Apple", model: "iPad Pro (11\" gen 1+, 12.9\" gen 3+), iPad Air (gen 3+), iPad (gen 7+), iPad mini (gen 5+)", series: "iPad", note: "ต้องเป็นรุ่น Cellular เท่านั้น" },
+    
+    // Samsung
+    { brand: "Samsung", model: "S25, S25+, S25 Ultra", series: "Galaxy S25 Series", note: "รุ่นล่าสุด (ตรวจสอบภูมิภาค)" },
+    { brand: "Samsung", model: "S24, S24+, S24 Ultra, S24 FE", series: "Galaxy S24 Series", note: "" },
+    { brand: "Samsung", model: "S23, S23+, S23 Ultra, S23 FE", series: "Galaxy S23 Series", note: "" },
+    { brand: "Samsung", model: "S22, S22+, S22 Ultra", series: "Galaxy S22 Series", note: "" },
+    { brand: "Samsung", model: "S21, S21+, S21 Ultra 5G", series: "Galaxy S21 Series", note: "" },
+    { brand: "Samsung", model: "S20, S20+, S20 Ultra", series: "Galaxy S20 Series", note: "S20 FE ส่วนใหญ่ไม่รองรับ" },
+    { brand: "Samsung", model: "Z Fold 6, Z Flip 6, Z Fold 5, Z Flip 5, Z Fold 4, Z Flip 4, Fold 3, Flip 3", series: "Galaxy Z Fold/Flip", note: "" },
+    { brand: "Samsung", model: "Note 20, Note 20 Ultra, Note 20 Ultra 5G", series: "Galaxy Note", note: "" },
+    { brand: "Samsung", model: "A55 5G, A54 5G, A35 5G", series: "Galaxy A Series", note: "เฉพาะบางโมเดล/ภูมิภาค" },
+
+    // Google
+    { brand: "Google", model: "Pixel 9, 9 Pro, 9 Pro XL, 9 Pro Fold", series: "Pixel Series", note: "" },
+    { brand: "Google", model: "Pixel 8, 8 Pro, 8a", series: "Pixel Series", note: "" },
+    { brand: "Google", model: "Pixel 7, 7 Pro, 7a", series: "Pixel Series", note: "" },
+    { brand: "Google", model: "Pixel 6, 6 Pro, 6a", series: "Pixel Series", note: "" },
+    { brand: "Google", model: "Pixel 4, 4a, 5, 5a", series: "Pixel Series", note: "Pixel 3 รองรับบางเครือข่าย" },
+
+    // Xiaomi
+    { brand: "Xiaomi", model: "Xiaomi 15, 15 Pro, 15 Ultra", series: "Xiaomi 15 Series", note: "เครื่อง Global เท่านั้น (จีนมักไม่ได้)" },
+    { brand: "Xiaomi", model: "Xiaomi 14, 14 Pro, 14 Ultra, 14T, 14T Pro", series: "Xiaomi 14 Series", note: "เครื่อง Global เท่านั้น" },
+    { brand: "Xiaomi", model: "Xiaomi 13, 13 Pro, 13 Lite, 13T, 13T Pro", series: "Xiaomi 13 Series", note: "เครื่อง Global เท่านั้น" },
+    { brand: "Xiaomi", model: "Xiaomi 12T Pro", series: "Xiaomi 12 Series", note: "รุ่น 12/12 Pro ปกติอาจไม่รองรับ" },
+    { brand: "Xiaomi", model: "Redmi Note 13 Pro+ 5G, Redmi Note 14 Pro+", series: "Redmi", note: "เช็คโมเดล Global" },
+
+    // OPPO
+    { brand: "OPPO", model: "Find X8, Find X5, X5 Pro, Find X3 Pro", series: "Find X Series", note: "" },
+    { brand: "OPPO", model: "Find N3, Find N3 Flip, Find N2 Flip", series: "Find N Series", note: "" },
+    { brand: "OPPO", model: "Reno 11 Pro, Reno 10 Pro+, Reno 6 Pro 5G", series: "Reno Series", note: "รองรับเฉพาะบางประเทศ" },
+
+    // Vivo
+    { brand: "Vivo", model: "X100 Pro, X90 Pro", series: "X Series", note: "Global Version เท่านั้น" },
+    { brand: "Vivo", model: "V40, V29", series: "V Series", note: "(เฉพาะโมเดลยุโรป/Global)" },
+
+    // Motorola
+    { brand: "Motorola", model: "Razr 40 Ultra, Razr+ 2024, Razr 2022, Razr 5G", series: "Razr Series", note: "" },
+    { brand: "Motorola", model: "Edge 50 Pro, Edge 40 Pro", series: "Edge Series", note: "" },
+
+    // Huawei & Honor & Sony
+    { brand: "Huawei", model: "P40, P40 Pro, Mate 40 Pro", series: "P/Mate Series", note: "เครื่องส่วนใหญ่ไม่มี Google Service" },
+    { brand: "Honor", model: "Magic 6 Pro, Magic 5 Pro, Magic 4 Pro, Magic V2", series: "Magic Series", note: "" },
+    { brand: "Sony", model: "Xperia 1 IV, 1 V, 5 IV, 10 IV", series: "Xperia", note: "" }
+];
+
+// ==========================================
+// LOGIC
+// ==========================================
+
+// 1. Auto-Detect Logic (Best Effort)
+function detectDevice() {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    let detectedBrand = null;
+    
+    // Simple heuristics
+    if (/iPhone/.test(ua)) detectedBrand = "Apple";
+    else if (/iPad/.test(ua)) detectedBrand = "Apple";
+    else if (/Samsung|SM-|GT-/.test(ua)) detectedBrand = "Samsung";
+    else if (/Pixel/.test(ua)) detectedBrand = "Google";
+    else if (/Android/.test(ua)) detectedBrand = "Android (General)";
+
+    // Simulate processing time for better UX
+    setTimeout(() => {
+        document.getElementById('scanOverlay').classList.add('hidden');
+        document.getElementById('resultContainer').classList.remove('hidden');
+        
+        if (detectedBrand === "Apple") {
+            // iOS doesn't share model version easily in UA (usually just "iPhone")
+            // So we default to a "Supported" state but ask them to verify exact model
+            showResult(true, "iPhone / iPad", "ตรวจพบอุปกรณ์ Apple iOS", "กรุณาตรวจสอบรุ่นย่อยด้านล่างเพื่อความชัวร์");
+        } else if (detectedBrand) {
+             // For Android, we might catch a model number, but let's be safe
+            showResult(true, detectedBrand, `ตรวจพบอุปกรณ์ ${detectedBrand}`, "ระบบคาดว่าอุปกรณ์นี้อาจรองรับ eSIM แต่กรุณายืนยันรุ่น");
+        } else {
+            // Unknown
+            showResult(false, "ไม่ทราบรุ่น", "ไม่สามารถระบุรุ่นอัตโนมัติได้", "กรุณาเลือกค้นหารุ่นด้วยตัวเองด้านล่าง");
+            toggleManualSearch(); // Open search immediately
+        }
+    }, 2000);
+}
+
+function showResult(isSupported, modelName, message, note) {
+    const card = document.getElementById('statusCard');
+    const icon = document.getElementById('statusIcon');
+    const title = document.getElementById('statusTitle');
+    const msg = document.getElementById('statusMessage');
+    const model = document.getElementById('deviceModelName');
+    const noteEl = document.getElementById('deviceNote');
+
+    // Reset classes
+    card.className = "rounded-xl p-6 text-center mb-6 border-4 shadow-lg transition-all duration-500";
+    
+    if (isSupported) {
+        card.classList.add('bg-green-50', 'border-green-400', 'text-green-800');
+        icon.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
+        title.innerText = "รองรับ eSIM";
+        title.classList.add('text-green-700');
+    } else {
+        card.classList.add('bg-red-50', 'border-red-400', 'text-red-800');
+        icon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+        title.innerText = "ไม่รองรับ eSIM";
+        title.classList.add('text-red-700');
+    }
+
+    msg.innerText = message;
+    model.innerText = modelName;
+    
+    if (note) {
+        noteEl.innerText = note;
+        noteEl.classList.remove('hidden');
+    } else {
+        noteEl.classList.add('hidden');
+    }
+}
+
+// 2. Manual Search Logic
+let currentBrandFilter = 'All';
+
+function toggleManualSearch() {
+    const section = document.getElementById('manualSearchSection');
+    section.classList.remove('hidden');
+    section.scrollIntoView({ behavior: 'smooth' });
+    populateBrands();
+    filterDevices();
+}
+
+function populateBrands() {
+    const brands = ['All', ...new Set(esimData.map(item => item.brand))];
+    const container = document.getElementById('brandFilters');
+    container.innerHTML = brands.map(brand => `
+        <button onclick="setBrandFilter('${brand}')" 
+            class="px-4 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${currentBrandFilter === brand ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}">
+            ${brand === 'All' ? 'ทั้งหมด' : brand}
+        </button>
+    `).join('');
+}
+
+function setBrandFilter(brand) {
+    currentBrandFilter = brand;
+    populateBrands();
+    filterDevices();
+}
+
+function filterDevices() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const list = document.getElementById('deviceList');
+    
+    const filtered = esimData.filter(item => {
+        const matchBrand = currentBrandFilter === 'All' || item.brand === currentBrandFilter;
+        const matchSearch = item.model.toLowerCase().includes(query) || 
+                          item.series.toLowerCase().includes(query) ||
+                          item.brand.toLowerCase().includes(query);
+        return matchBrand && matchSearch;
+    });
+
+    if (filtered.length === 0) {
+        list.innerHTML = `
+            <div class="text-center py-8 text-gray-400">
+                <i class="fas fa-search-minus text-2xl mb-2"></i>
+                <p>ไม่พบรุ่นที่ค้นหา</p>
+                <p class="text-xs">รุ่นนี้อาจไม่รองรับ eSIM</p>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = filtered.map(item => `
+        <div onclick="selectDevice('${item.brand} ${item.series}', '${item.note}', '${item.model}')" 
+            class="device-card bg-white p-3 rounded-lg border border-gray-100 shadow-sm hover:shadow-md cursor-pointer flex items-center justify-between group">
+            <div>
+                <div class="text-xs font-bold text-blue-600 mb-1">${item.brand}</div>
+                <div class="font-medium text-gray-800">${item.series}</div>
+                <div class="text-xs text-gray-500 truncate max-w-[200px]">${item.model}</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                <i class="fas fa-chevron-right text-gray-400 group-hover:text-green-600 text-xs"></i>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectDevice(name, note, details) {
+    // Scroll back up
+    document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
+    
+    // Since it's in our DB, it is supported
+    showResult(true, name, "รุ่นนี้อยู่ในรายการที่รองรับ", note || details);
+}
+
+// Initialize
+window.onload = () => {
+    detectDevice();
+};
+
+</script>
+</body>
+</html>
